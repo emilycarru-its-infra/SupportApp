@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Remove old installation
+rm -rf /Library/Application\ Support/SupportApp/Support*
+exit 0

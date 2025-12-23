@@ -1,0 +1,15 @@
+name: SupportApp.pkg
+identifier: ca.ecuad.macadmin.SupportApp
+version: 3.0.0
+distribution_style: true
+install_location: /Library/
+ownership: recommended
+postinstall_action: none
+preserve_xattr: false
+suppress_bundle_relocation: true
+signing_info:
+  identity: 'Developer ID Installer: Emily Carr University of Art and Design (7TF6CSP83S)'
+  keychain: ${HOME}/Library/Keychains/signing.keychain
+  timestamp: true
+notarization_info:
+  keychain_profile: notarization_credentials

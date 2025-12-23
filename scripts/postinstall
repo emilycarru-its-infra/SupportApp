@@ -1,0 +1,45 @@
+#!/bin/zsh
+
+# Set permissions on LaunchAgent
+chown root:wheel /Library/LaunchAgents/ca.ecuad.macadmin.SupportApp.plist
+chmod 644 /Library/LaunchAgents/ca.ecuad.macadmin.SupportApp.plist
+
+# Remove quarantine attribute and set permissions on app
+xattr -d com.apple.quarantine -r /Library/Application\ Support/SupportApp/Support.app 2>/dev/null || true
+chmod -R 755 /Library/Application\ Support/SupportApp/Support.app
+
+launch_agent_plist_name='ca.ecuad.macadmin.SupportApp.plist'
+launch_agent_base_path='Library/LaunchAgents/'
+
+# Load agent if installing to a running system
+if [[ $3 == "/" ]] ; then
+  # Fail the install if the admin forgets to change their paths and they don't exist.
+  if [ ! -e "$3/${launch_agent_base_path}${launch_agent_plist_name}" ]; then
+    echo "LaunchAgent missing, exiting"
+    exit 1
+  fi
+
+  # Current console user information
+  console_user=$(/usr/bin/stat -f "%Su" /dev/console)
+  console_user_uid=$(/usr/bin/id -u "$console_user")
+
+  # Only enable the LaunchAgent if there is a user logged in
+  if [[ -z "$console_user" ]]; then
+    echo "Did not detect user"
+  elif [[ "$console_user" == "loginwindow" ]]; then
+    echo "Detected Loginwindow Environment"
+  elif [[ "$console_user" == "_mbsetupuser" ]]; then
+    echo "Detect SetupAssistant Environment"
+  elif [[ "$console_user" == "root" ]]; then
+    echo "Detect root as currently logged-in user"
+  else
+    # Unload the agent so it can be triggered on re-install
+    /bin/launchctl asuser "${console_user_uid}" /bin/launchctl unload -w "$3${launch_agent_base_path}${launch_agent_plist_name}" 2>/dev/null || true
+    # Kill Support app just in case
+    /usr/bin/killall Support 2>/dev/null || true
+    # Load the launch agent
+    /bin/launchctl asuser "${console_user_uid}" /bin/launchctl load -w "$3${launch_agent_base_path}${launch_agent_plist_name}"
+  fi
+fi
+
+exit 0
