@@ -89,11 +89,10 @@ xcodebuild clean build \
     -scheme "Support" \
     -configuration Release \
     -derivedDataPath "DerivedData" \
-    CODE_SIGN_IDENTITY="${SIGNING_IDENTITY_APP}" \
+    CODE_SIGN_IDENTITY="-" \
     CODE_SIGN_STYLE=Manual \
     DEVELOPMENT_TEAM="${TEAM_ID}" \
     PRODUCT_BUNDLE_IDENTIFIER="${CUSTOM_BUNDLE_ID}" \
-    OTHER_CODE_SIGN_FLAGS="--keychain ${SIGNING_KEYCHAIN}" \
     2>&1 | grep -E '(^Build |^\*\*|error:|warning:)' || true
 
 BUILT_APP=$(find "DerivedData" -name "Support.app" -type d | head -n 1)
@@ -105,9 +104,36 @@ fi
 
 echo "  ✓ Built"
 
-# Step 4: Copy to payload
+# Step 4: Re-sign with proper options for notarization
 echo ""
-echo -e "${BLUE}[4/5]${NC} ${YELLOW}Copying to munkipkg payload...${NC}"
+echo -e "${BLUE}[4/5]${NC} ${YELLOW}Code signing for notarization...${NC}"
+
+# Sign XPC service
+codesign --force --sign "${SIGNING_IDENTITY_APP}" \
+    --timestamp \
+    --options runtime \
+    --keychain "${SIGNING_KEYCHAIN}" \
+    "${BUILT_APP}/Contents/XPCServices/SupportXPC.xpc"
+
+# Sign privileged helper
+codesign --force --sign "${SIGNING_IDENTITY_APP}" \
+    --timestamp \
+    --options runtime \
+    --keychain "${SIGNING_KEYCHAIN}" \
+    "${BUILT_APP}/Contents/Library/LaunchServices/nl.root3.support.helper"
+
+# Sign main app
+codesign --force --sign "${SIGNING_IDENTITY_APP}" \
+    --timestamp \
+    --options runtime \
+    --keychain "${SIGNING_KEYCHAIN}" \
+    "${BUILT_APP}"
+
+echo "  ✓ Signed with hardened runtime and timestamp"
+
+# Step 5: Copy to payload
+echo ""
+echo -e "${BLUE}[5/5]${NC} ${YELLOW}Copying to munkipkg payload...${NC}"
 mkdir -p "payload/Application Support/SupportApp"
 ditto "${BUILT_APP}" "payload/Application Support/SupportApp/Support.app"
 
@@ -124,10 +150,13 @@ echo "  ✓ Verified: ${ACTUAL_ID}"
 # Update version in build-info.yaml
 sed -i '' "s/^version: .*/version: ${VERSION}/" build-info.yaml
 
-# Step 5: Build package
+# Step 6: Build package
 echo ""
-echo -e "${BLUE}[5/5]${NC} ${YELLOW}Building package with munkipkg...${NC}"
+echo -e "${BLUE}[6/6]${NC} ${YELLOW}Building package with munkipkg...${NC}"
 munkipkg "${SCRIPT_DIR}"
+
+# Rename package to include version
+mv "build/SupportApp.pkg" "build/SupportApp-${VERSION}.pkg"
 
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════════════╗${NC}"
@@ -138,5 +167,6 @@ echo -e "${GREEN}Package:${NC} build/SupportApp-${VERSION}.pkg"
 echo -e "${GREEN}Bundle ID:${NC} ${CUSTOM_BUNDLE_ID}"
 echo ""
 echo -e "${YELLOW}Next:${NC}"
-echo "  Test package, then: munkiimport build/SupportApp-${VERSION}.pkg"
+echo "  sudo installer -pkg build/SupportApp-${VERSION}.pkg -target /"
+echo "  munkiimport build/SupportApp-${VERSION}.pkg"
 echo ""

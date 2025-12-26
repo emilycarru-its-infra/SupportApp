@@ -7,11 +7,11 @@
 		<string>nl.root3.support</string>
 	</array>
 	<key>Label</key>
-	<string>nl.root3.support.helper</string>
+	<string>ca.ecuad.macadmin.SupportApp.helper</string>
 	<key>MachServices</key>
 	<dict>
-		<key>nl.root3.support.helper</key>
-		<true/>
+		<key>ca.ecuad.macadmin.SupportApp.helper</key>
+		<false/>
 	</dict>
 </dict>
 </plist>

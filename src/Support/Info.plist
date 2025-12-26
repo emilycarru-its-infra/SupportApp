@@ -9,7 +9,7 @@
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>ca.ecuad.macadmin.SupportApp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -30,8 +30,8 @@
 	<string>© 2025 Root3 B.V. All rights reserved.</string>
 	<key>SMPrivilegedExecutables</key>
 	<dict>
-		<key>nl.root3.support.helper</key>
-		<string>anchor apple generic and identifier "nl.root3.support.helper" and (certificate leaf[field.1.2.840.113635.100.6.1.9] /* exists */ or certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = "98LJ4XBGYK")</string>
+		<key>ca.ecuad.macadmin.SupportApp.helper</key>
+		<string>anchor apple generic and identifier ca.ecuad.macadmin.SupportApp.helper and (certificate leaf[field.1.2.840.113635.100.6.1.9] /* exists */ or certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = 7TF6CSP83S)</string>
 	</dict>
 </dict>
 </plist>
