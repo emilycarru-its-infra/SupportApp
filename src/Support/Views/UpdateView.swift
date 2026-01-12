@@ -77,7 +77,19 @@ struct UpdateView: View {
                 if computerinfo.recommendedUpdates.count > 0 {
                     
                     Button(action: {
-                        openSoftwareUpdate()
+                        // If there is only one update, check if it's a Background Security Update
+                        if computerinfo.recommendedUpdates.count == 1 {
+                            if let update = computerinfo.recommendedUpdates.first {
+                                // Open Background Security Update prefpane when displayname contains it
+                                if update.displayName.contains("Background Security Improvement") {
+                                    openBSI()
+                                } else {
+                                    openSoftwareUpdate()
+                                }
+                            }
+                        } else {
+                            openSoftwareUpdate()
+                        }
                     }) {
                         Text(NSLocalizedString("UPDATE_NOW", comment: ""))
                             .font(.system(.body, design: .rounded))
@@ -214,7 +226,7 @@ struct UpdateView: View {
         }
     }
     
-    // Open URL
+    // Open Software Update prefpane in System Settings
     func openSoftwareUpdate() {
         
         guard let url = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate") else {
@@ -226,6 +238,18 @@ struct UpdateView: View {
         // Close popover
         appDelegate.togglePopover(nil)
 
+    }
+    
+    // Open Software Update prefpane in System Settings
+    func openBSI() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.SecurityImprovements-Settings.extension") else {
+            return
+        }
+
+        NSWorkspace.shared.open(url)
+        
+        // Close popover
+        appDelegate.togglePopover(nil)
     }
 }
 
