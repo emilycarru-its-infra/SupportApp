@@ -69,6 +69,20 @@ struct ProgressBarItem: View {
                         ProgressView(value: percentage , total: 120)
                             .padding(.trailing, 14)
                             .accessibilityHidden(true)
+                            .modify {
+                                if percentage >= 108 {
+                                    // Show red bar if more than 90% of 120 points (108)
+                                    $0
+                                        .tint(.red)
+                                } else if notificationBadgeBool ?? false && percentage < 108 {
+                                    // Show orange bar if optional storageLimit is reached and still below 90%
+                                    $0
+                                        .tint(.orange)
+                                } else {
+                                    $0
+                                        .tint(symbolColor)
+                                }
+                            }
                         
                     }
                     .accessibilityElement(children: .combine)
