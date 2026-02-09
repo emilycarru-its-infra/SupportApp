@@ -94,7 +94,7 @@ struct Item: View {
                             .foregroundStyle(.white.opacity(colorScheme == .dark ? 0.8 : 1.0))
                             .lineLimit(2)
                         
-                        if let subtitle = subtitle {
+                        if let subtitle = subtitle, !subtitle.isEmpty {
                             if hoverView && showSubtitle {
                                 // Show the subtitle when hover animation is enabled
                                 Text(subtitle.replaceLocalVariables(computerInfo: computerinfo, userInfo: userinfo))
@@ -215,7 +215,7 @@ struct Item: View {
                             .font(.system(.body, design: .rounded)).fontWeight(.medium)
                             .lineLimit(2)
                         
-                        if let subtitle = subtitle {
+                        if let subtitle = subtitle, !subtitle.isEmpty {
                             if hoverView && showSubtitle {
                                 // Show the subtitle when hover animation is enabled
                                 Text(subtitle.replaceLocalVariables(computerInfo: computerinfo, userInfo: userinfo))
