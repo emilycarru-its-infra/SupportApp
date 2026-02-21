@@ -1,6 +1,6 @@
 name: SupportApp.pkg
 identifier: ca.ecuad.macadmin.SupportApp
-version: 3.0.0
+version: 3.0.1
 distribution_style: true
 install_location: /Library/
 ownership: recommended

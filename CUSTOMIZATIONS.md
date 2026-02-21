@@ -5,7 +5,7 @@ Fork of [root3nl/SupportApp](https://github.com/root3nl/SupportApp) maintained b
 ## Quick Start
 
 ```bash
-./build.sh 3.0.0
+./build.sh 3.0.1
 ```
 
 This builds Support.app with ECUAD customizations and creates a signed `.pkg` installer.
@@ -72,38 +72,56 @@ git fetch upstream --tags
 ### Update to New Version
 
 ```bash
-# 1. Fetch latest from upstream
+# 1. Fetch latest upstream tags and commits
+cd packages/SupportApp
 git fetch upstream --tags
 
-# 2. Review changes (optional)
-git log HEAD..v3.0.0 --oneline
+# 2. Check what's new (optional)
+git tag | tail -5                          # latest upstream tags
+git log HEAD..upstream/master --oneline   # commits since last merge
 
-# 3. Merge upstream version
-git merge v3.0.0
+# 3. Start the merge (no-commit so conflicts can be resolved manually)
+git merge upstream/master --no-commit --no-ff
 
-# 4. Resolve conflicts (if any)
-#    For ECUAD files, keep ours:
-git checkout --ours build.sh
-git checkout --ours build-info.yaml
-git checkout --ours CUSTOMIZATIONS.md
-git checkout --ours payload/
-git checkout --ours scripts/
-git checkout --ours .gitignore
+# 4. Check what conflicted
+git status --short
+```
 
-#    For src/, keep theirs (upstream changes):
-git checkout --theirs src/
+Likely conflict is `src/SupportHelper/Info.plist` — upstream uses `nl.root3.support.helper`,
+we use `ca.ecuad.macadmin.SupportApp.helper`. Resolution: keep our bundle ID, take their version numbers.
 
-# 5. Complete merge
-git add .
-git commit -m "Merge upstream v3.0.0 with ECUAD customizations"
+```bash
+# Keep our bundle ID in the conflicted file
+git checkout --ours src/SupportHelper/Info.plist
 
-# 6. Build and test
-./build.sh 3.0.0
+# Then manually update CFBundleShortVersionString and CFBundleVersion
+# to match what upstream/master has:
+git show upstream/master:src/SupportHelper/Info.plist | grep -A1 "CFBundleShortVersion\|CFBundleVersion"
 
-# 7. Update submodule in main repo
+# Edit src/SupportHelper/Info.plist to update the version numbers, then stage
+git add src/SupportHelper/Info.plist
+```
+
+If there are conflicts in any ECUAD-owned files (`build.sh`, `build-info.yaml`,
+`CUSTOMIZATIONS.md`, `payload/`, `scripts/`, `.gitignore`), keep ours:
+
+```bash
+git checkout --ours build.sh build-info.yaml CUSTOMIZATIONS.md .gitignore
+git checkout --ours -- payload/ scripts/
+git add build.sh build-info.yaml CUSTOMIZATIONS.md .gitignore payload/ scripts/
+```
+
+```bash
+# 5. Complete the merge
+git commit -m "Merge upstream vX.Y.Z with ECUAD customizations"
+
+# 6. Push submodule to origin
+git push origin main
+
+# 7. Update submodule pointer in main Munki repo
 cd ../..
 git add packages/SupportApp
-git commit -m "Update SupportApp to v3.0.0"
+git commit -m "Update SupportApp to vX.Y.Z"
 ```
 
 ---
@@ -174,10 +192,36 @@ Settings:
 ### Build Command
 
 ```bash
-./build.sh 3.0.0
+./build.sh 3.0.1
 ```
 
-Output: `build/SupportApp-3.0.0.pkg`
+Output: `build/SupportApp-3.0.1.pkg`
+
+> **Note**: The script always cleans, signs, and notarizes. Flags like `--clean --sign --notarize`
+> are accepted but not required.
+
+### Rebuild and Reimport Into Munki
+
+After updating from upstream (or any change that requires a new package):
+
+```bash
+# 1. Build, sign, and notarize
+cd packages/SupportApp
+./build.sh 3.0.1
+
+# 2. Import into Munki repo
+#    munkiimport will prompt to use the existing pkgsinfo as a template — answer y
+munkiimport build/SupportApp-3.0.1.pkg
+
+# 3. Commit the new pkgsinfo and updated submodule pointer
+cd ../..
+git add packages/SupportApp deployment/pkgsinfo/apps/utilities/SupportApp-3.0.1.yaml
+git commit -m "Add SupportApp 3.0.1 to Munki"
+```
+
+The `munkiimport` template prompt copies: name, catalogs (`Development, Testing, Staging, Production`),
+`unattended_install: true`, category, and developer from the previous version. Just confirm the version
+number and description look right before accepting.
 
 ### Deploy to Munki
 

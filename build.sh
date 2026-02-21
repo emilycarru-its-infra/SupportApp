@@ -25,11 +25,21 @@ SIGNING_IDENTITY_APP="Developer ID Application: Emily Carr University of Art and
 SIGNING_KEYCHAIN="${HOME}/Library/Keychains/signing.keychain"
 TEAM_ID="7TF6CSP83S"
 
-VERSION="${1:-}"
+# Parse arguments — version is the first non-flag argument
+# Flags like --clean, --sign, --notarize are accepted but ignored
+# (this script always cleans, signs, and notarizes)
+VERSION=""
+for arg in "$@"; do
+    if [[ "${arg}" != --* ]]; then
+        VERSION="${arg}"
+        break
+    fi
+done
+
 if [[ -z "${VERSION}" ]]; then
     echo -e "${RED}Error: No version specified${NC}"
     echo "Usage: $0 <version>"
-    echo "Example: $0 3.0.0"
+    echo "Example: $0 3.0.1"
     exit 1
 fi
 
