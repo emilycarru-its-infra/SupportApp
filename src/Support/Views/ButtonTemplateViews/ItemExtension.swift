@@ -61,6 +61,9 @@ struct ItemExtension: View {
     @AppStorage private var extensionValue: String?
     @AppStorage private var extensionLoading: Bool?
     @AppStorage private var extensionAlert: Bool?
+    @AppStorage private var extensionSymbol: String?
+    @AppStorage private var extensionActionType: String?
+    @AppStorage private var extensionAction: String?
 
     init(title: String,
          subtitle: String? = nil,
@@ -97,8 +100,37 @@ struct ItemExtension: View {
         self._extensionValue = AppStorage(extensionIdentifier, store: .standard)
         self._extensionLoading = AppStorage("\(extensionIdentifier)_loading", store: .standard)
         self._extensionAlert = AppStorage("\(extensionIdentifier)_alert", store: .standard)
+        self._extensionSymbol = AppStorage("\(extensionIdentifier)_symbol", store: .standard)
+        self._extensionActionType = AppStorage("\(extensionIdentifier)_action_type", store: .standard)
+        self._extensionAction = AppStorage("\(extensionIdentifier)_action", store: .standard)
+    }
+    
+    // Show dynamic SF Symbol or MDM managed SF Symbol
+    var activeExtensionSymbol: String {
+        if let extensionSymbol {
+            return extensionSymbol
+        } else {
+            return image
+        }
     }
 
+    // Dynamic action type or MDM managed action type
+    var activeExtensionActionType: String? {
+        if let extensionActionType {
+            return extensionActionType
+        } else {
+            return linkType
+        }
+    }
+    
+    // Dynamic action or MDM managed action
+    var activeExtensionAction: String? {
+        if let extensionAction {
+            return extensionAction
+        } else {
+            return link
+        }
+    }
     
     var body: some View {
         
@@ -120,7 +152,7 @@ struct ItemExtension: View {
                         Ellipse()
                             .foregroundColor(.white)
                             .overlay(
-                                Image(systemName: image)
+                                Image(systemName: activeExtensionSymbol)
                                     .foregroundColor(symbolColor)
                                     .font(.system(size: 18))
                             )
@@ -226,10 +258,10 @@ struct ItemExtension: View {
                             .accessibilityHidden(true)
                     } else {
                         Ellipse()
-                            .foregroundColor(hoverView && link != "" ? .primary : symbolColor)
+                            .foregroundColor(hoverView && activeExtensionAction != "" ? .primary : symbolColor)
                             .overlay(
-                                Image(systemName: image)
-                                    .foregroundColor(hoverView && link != "" ? Color("hoverColor") : Color.white)
+                                Image(systemName: activeExtensionSymbol)
+                                    .foregroundColor(hoverView && activeExtensionAction != "" ? Color("hoverColor") : Color.white)
                             )
                             .frame(width: 26, height: 26)
                             .padding(.leading, 10)
@@ -264,7 +296,7 @@ struct ItemExtension: View {
             }
             .frame(width: Constants.largeItemWidth, height: Constants.itemLegacyHeight)
             .accessibilityLabel(title + ", " + (subtitle ?? ""))
-            .background(hoverView && hoverEffectEnable && link != "" ? EffectsView(material: NSVisualEffectView.Material.windowBackground, blendingMode: NSVisualEffectView.BlendingMode.withinWindow) : EffectsView(material: NSVisualEffectView.Material.popover, blendingMode: NSVisualEffectView.BlendingMode.withinWindow))
+            .background(hoverView && hoverEffectEnable && activeExtensionAction != "" ? EffectsView(material: NSVisualEffectView.Material.windowBackground, blendingMode: NSVisualEffectView.BlendingMode.withinWindow) : EffectsView(material: NSVisualEffectView.Material.popover, blendingMode: NSVisualEffectView.BlendingMode.withinWindow))
             .cornerRadius(10)
             // Apply gray and black border in Dark Mode to better view the buttons like Control Center
             .modifier(DarkModeBorder())
@@ -318,35 +350,35 @@ struct ItemExtension: View {
     
     func tapGesture() {
         // Don't do anything when no link is specified
-        guard link != "" else {
+        guard activeExtensionAction != "" else {
             logger.debug("No link specified for \(title, privacy: .public), button disabled...")
             return
         }
         
-        if linkType == "App" {
+        if activeExtensionActionType == "App" {
             openApp()
-        } else if linkType == "URL" {
+        } else if activeExtensionActionType == "URL" {
             openLink()
-        } else if linkType == "Command" {
+        } else if activeExtensionActionType == "Command" {
             runCommand()
             // MARK: - DistributedNotification is deprecated, use PrivilegedScript instead
-        } else if linkType == "DistributedNotification" || linkType == "PrivilegedScript" {
-            guard let link else {
+        } else if activeExtensionActionType == "DistributedNotification" || activeExtensionActionType == "PrivilegedScript" {
+            guard let activeExtensionAction else {
                 return
             }
             Task {
-                await runPrivilegedCommand(command: link, key: "Action")
+                await runPrivilegedCommand(command: activeExtensionAction, key: "Action")
             }
         } else {
             self.showingAlert.toggle()
-            logger.error("Invalid Link Type: \(linkType!)")
+            logger.error("Invalid Link Type: \(activeExtensionActionType!)")
         }
     }
     
     // Open application with given Bundle Identifier
     func openApp() {
         
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: link ?? "")
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: activeExtensionAction ?? "")
                 // Show alert when there is an error
         else {
             self.showingAlert.toggle()
@@ -361,7 +393,7 @@ struct ItemExtension: View {
     
     // Open URL
     func openLink() {
-        guard let url = URL(string: link ?? "")
+        guard let url = URL(string: activeExtensionAction ?? "")
                 // Show alert when there is an error
         else {
             self.showingAlert.toggle()
@@ -381,7 +413,7 @@ struct ItemExtension: View {
         let task = Process()
         let pipe = Pipe()
         
-        let command = link?.replaceLocalVariables(computerInfo: computerinfo, userInfo: userinfo)
+        let command = activeExtensionAction?.replaceLocalVariables(computerInfo: computerinfo, userInfo: userinfo)
         
         task.standardOutput = pipe
         task.standardError = pipe
