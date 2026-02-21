@@ -25,7 +25,7 @@ SIGNING_IDENTITY_APP="Developer ID Application: Emily Carr University of Art and
 SIGNING_KEYCHAIN="${HOME}/Library/Keychains/signing.keychain"
 TEAM_ID="7TF6CSP83S"
 
-# Parse arguments — version is the first non-flag argument
+# Parse arguments — version is optional first non-flag argument
 # Flags like --clean, --sign, --notarize are accepted but ignored
 # (this script always cleans, signs, and notarizes)
 VERSION=""
@@ -36,10 +36,13 @@ for arg in "$@"; do
     fi
 done
 
+# If no version arg, read from source Info.plist
 if [[ -z "${VERSION}" ]]; then
-    echo -e "${RED}Error: No version specified${NC}"
-    echo "Usage: $0 <version>"
-    echo "Example: $0 3.0.1"
+    VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" src/Support/Info.plist 2>/dev/null)
+fi
+
+if [[ -z "${VERSION}" ]]; then
+    echo -e "${RED}Error: Could not determine version from src/Support/Info.plist${NC}"
     exit 1
 fi
 
